@@ -58,36 +58,62 @@ public class RoundRobin {
     }
 
     private static void getAverageWaitingTime() {
-        waitingTime=0;
-        List<Float> arrayOfProcess = new ArrayList<>();
+        List<Float> waitTime = new ArrayList<>();
+        List<Float> toBeSubtracted = new ArrayList<>();
+        List<Float> totalWaitingTime = new ArrayList<>();
         for (int index = 0; index < processName.length; index++){
             ListIterator<Map<String, Float>> mapListIterator = processTurnaroundList.listIterator();
             while (mapListIterator.hasNext()){
                 Map.Entry<String, Float> entry = mapListIterator.next().entrySet().iterator().next();
                 String key = entry.getKey();
+                //iterate all and save the values to list.
                 if (key.equals(processName[index])){
                     //TODO: Understand the context that I was trying to come up here a couple days ago.
-                    if (mapListIterator.hasPrevious()){
-                        Map<String, Float> previous = mapListIterator.previous();
-                        Set<Map.Entry<String, Float>> entries = previous.entrySet();
-                        Iterator<Map.Entry<String, Float>> iterator = entries.iterator();
-                        Map.Entry<String, Float> next = iterator.next();
+//                    if (mapListIterator.previousIndex() == 0 && index == 0)
+//                        toBeSubtracted.add(0f);
+                    float value = entry.getValue();
+                    toBeSubtracted.add(value);
 
-                        arrayOfProcess.add(next.getValue());
+                    if (mapListIterator.previousIndex() != 0){
+                        mapListIterator.previous();
+                        Map.Entry<String, Float> next = mapListIterator.previous().entrySet().iterator().next();
+
+                        waitTime.add(next.getValue());
+                        mapListIterator.next();
                         mapListIterator.next();
                     }
-                    else
-                        continue;
 
                 }
+                //if the map Iterator reached the last limit of the process[index] then do the computation.
                 if (!mapListIterator.hasNext()){
-                    for (float value : arrayOfProcess) {
-                        out.print(decimalFormat.format(value));
+                    float value = 0;
+                    if (index == 0){
+                        for (int i = 0; i < waitTime.size(); i++) {
+                            float subtrahend = toBeSubtracted.get(i);
+                            float waitTimeValue = waitTime.get(i);
+                            value += (waitTimeValue - subtrahend);
+                        }
+                    }else {
+                        for (int i = 0; i < waitTime.size() - 1; i++) {
+                            int k = i +1;
+                            float waitTimeValue = waitTime.get(k);
+                            float subtrahend = toBeSubtracted.get(i);
+                            value += (waitTimeValue - subtrahend);
+                        }
+                        value += waitTime.get(0);
                     }
+                    waitTime.clear();
+                    toBeSubtracted.clear();
+                    totalWaitingTime.add(value);
                 }
             }
         }
+
+        for (float value : totalWaitingTime){
+            waitingTime += value;
+        }
         waitingTime /= numberOfProcess;
+
     }
 
     private static void showGanttChart() {
